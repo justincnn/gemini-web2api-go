@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const Version = "4.6.0"
+const Version = "4.8.0"
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	body, _ := json.Marshal(data)
@@ -282,7 +282,7 @@ func handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 	var text string
 	var toolCalls []ToolCall
 	var res *StreamResult
-	if rtCfg().MultiTurn && len(images) == 0 {
+	if rtCfg().MultiTurn && len(images) == 0 && modelCfg.Tool == 0 {
 		// 多轮：按历史前缀识别续接，命中就只发新消息、历史留服务端。带 tools 也走这条。
 		text, toolCalls, res, err = callGeminiConv(messages, modelCfg, tools, req["tool_choice"], onDelta, onReasoning)
 	} else {
@@ -637,7 +637,7 @@ func handleResponses(w http.ResponseWriter, r *http.Request) {
 	var text string
 	var toolCalls []ToolCall
 	var res *StreamResult
-	if rtCfg().MultiTurn && len(images) == 0 {
+	if rtCfg().MultiTurn && len(images) == 0 && modelCfg.Tool == 0 {
 		text, toolCalls, res, err = callGeminiConv(messages, modelCfg, tools, req["tool_choice"], onDelta, nil)
 	} else {
 		text, toolCalls, res, err = callGemini(prompt, latest, modelCfg, tools, images, onDelta, nil)

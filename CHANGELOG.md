@@ -2,6 +2,19 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 4.8.0
+
+### 修复（同步上游 v4.8.0）
+
+- **媒体模型（生图/音乐）不走多轮路径**。v4.5.0 把多轮 gate 放宽到 `len(images)==0`
+  后，媒体模型（`Tool>0`）也被放进多轮路径，但 `callGeminiConv` 只处理文本、不取
+  媒体产物，导致开了 `multi_turn` 后打 `gemini-image`/`gemini-music` 只回占位文本、
+  没有图/乐。gate 加 `modelCfg.Tool == 0`，媒体模型始终走 `callGemini`（那条才有
+  `hNvQHb` 取回 + 下载 + base64 组装）。
+- **生图取原图**（上游 issue #14）。plain gg-dl 链默认下来是 ~500px 缩略图；新增
+  `imageFullResURL` 在 CDN 链尾加 `=s0` 取原始尺寸，且不改格式（保持 PNG，不加
+  `-rj` 强制 jpeg）。
+
 ## 4.6.0
 
 ### 新增
