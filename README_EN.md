@@ -241,11 +241,11 @@ Gemini's backend only recognises three models (the list comes from `batchexecute
 | `gemini-3.6-flash` | All-round, default |
 | `gemini-3.5-flash-lite` | Fast and lightweight |
 | `gemini-3.1-pro` | Most capable, **needs a cookie**; every reply carries a reasoning chain |
-| `gemini-3.7-flash` | Newer Flash, **needs a cookie on an account already rolled out to 3.7** (otherwise downgraded to 3.5 Flash-Lite) |
+| `gemini-3.8-flash` | Newer Flash, **needs a cookie from a PAID Gemini account** (free accounts get downgraded to 3.5 Flash-Lite). `gemini-3.7-flash` is an alias — Google bumped that same hex from 3.7 to 3.8 in place |
 | `gemini-3.6-flash-thinking` | 3.6 Flash with extended thinking; **needs a cookie** |
 | `gemini-3.5-flash-lite-thinking` | 3.5 Flash-Lite with extended thinking; **needs a cookie** |
 | `gemini-3.1-pro-thinking` | 3.1 Pro with extended thinking; **needs a cookie** |
-| `gemini-3.7-flash-thinking` | 3.7 Flash with extended thinking; **needs a cookie on a 3.7-enabled account** |
+| `gemini-3.8-flash-thinking` | 3.8 Flash with extended thinking; **needs a paid-account cookie** (`gemini-3.7-flash-thinking` is an alias) |
 | `gemini-image` | Image generation (Nano Banana); base64 output; **needs a cookie** |
 | `gemini-music` | Music (Lyria, ~30s); base64 output; **needs a cookie** |
 | `gemini-canvas` | Canvas: generates an interactive HTML document (returned inline as a ```html block); **needs a cookie** |

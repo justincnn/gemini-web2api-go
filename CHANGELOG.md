@@ -2,6 +2,15 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 4.16.0
+
+### 新增
+
+- **`gemini-3.8-flash`（+ `-thinking`）**（issue #26）。Google 把原 3.7 Flash 那个 hex
+  （`56fdd199312815e2`）原地升成了 3.8——同 hex，服务端显示名从 `"3.7 Flash"` 变 `"3.8 Flash"`
+  （付费号 HAR 响应帧确认）。**付费 Gemini 账号专属**（不是灰度）：免费号仍降级成 3.5 Flash-Lite。
+  `gemini-3.7-flash` / `gemini-3.7-flash-thinking` 保留为别名（同 hex），老客户端不受影响。
+
 ## 4.15.0
 
 ### 新增
