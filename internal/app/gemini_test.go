@@ -311,6 +311,40 @@ func TestModelNeedsLogin(t *testing.T) {
 	}
 }
 
+// 匿名优先（#20）的挑号判据：开关关时恒 false（保持旧行为）；开时只有纯文本、
+// 非思考、无工具、不带附件的请求才走匿名，其余一律挑号。
+func TestAnonFirstEligible(t *testing.T) {
+	set := func(on bool) { rtMu.Lock(); rtVal.AnonFirst = on; rtMu.Unlock() }
+	defer set(false)
+
+	plain := Models["gemini-3.6-flash"]
+	pro := Models["gemini-3.1-pro"]
+	img := Models["gemini-image"]
+	think := Models["gemini-3.6-flash-thinking"]
+
+	set(false)
+	if anonFirstEligible(plain, false) {
+		t.Error("开关关时应恒 false（池里有号就用号）")
+	}
+
+	set(true)
+	if !anonFirstEligible(plain, false) {
+		t.Error("开 + 纯文本无附件应走匿名")
+	}
+	if anonFirstEligible(plain, true) {
+		t.Error("带附件必须挑号（匿名引用被上游 1100 拒）")
+	}
+	if anonFirstEligible(pro, false) {
+		t.Error("3.1 Pro 需登录，不能走匿名")
+	}
+	if anonFirstEligible(img, false) {
+		t.Error("生图需登录，不能走匿名")
+	}
+	if anonFirstEligible(think, false) {
+		t.Error("扩展思考需登录，不能走匿名")
+	}
+}
+
 // 错误分类要按"看到之后该做什么"分，尤其得把"上游瞬时拒绝"和"出口被封"
 // 分开——前者重试即可，后者必须换 IP，混在一起排查时判断不了。
 func TestClassifyError(t *testing.T) {

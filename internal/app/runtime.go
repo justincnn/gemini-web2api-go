@@ -52,6 +52,9 @@ type RuntimeConfig struct {
 	MultiTurn bool `json:"multi_turn"`
 	// 出完结果自动删掉 gemini.google.com 上的这条会话（#19）。只登录态生效。默认 false。
 	AutoDeleteConversation bool `json:"auto_delete_conversation"`
+	// 匿名优先（#20）：不需要登录态能力的请求（纯文本、非思考、无工具、无图）走匿名、
+	// 不占 cookie 账号，省账号额度；需要登录才挑号。默认 false，见 modelNeedsLogin。
+	AnonFirst bool `json:"anon_first"`
 }
 
 const runtimeConfigKey = "runtime_config"
@@ -85,6 +88,7 @@ func initRuntimeConfig() {
 		MultiTurn:        cfg.MultiTurn,
 
 		AutoDeleteConversation: cfg.AutoDeleteConversation,
+		AnonFirst:              cfg.AnonFirst,
 	}
 	if raw := kvGet(runtimeConfigKey); raw != "" {
 		saved := base

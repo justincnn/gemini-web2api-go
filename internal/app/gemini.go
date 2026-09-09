@@ -113,6 +113,14 @@ func modelNeedsLogin(mc ModelConfig) bool {
 	return mc.HexID == hexPro31 || mc.HexID == hexFlash38 || mc.Thinking || mc.Tool > 0
 }
 
+// anonFirstEligible 判断「匿名优先」开关下这次请求能不能走匿名（不占 cookie 账号）：
+// 开关开着 + 没带附件 + 模型不需要登录态。附件（图/视频）在对话里引用必须登录
+// （匿名会被上游回 1100），所以带附件时一律挑号。开关关着永远返回 false（保持旧行为：
+// 池里有号就用号）。
+func anonFirstEligible(mc ModelConfig, hasAttachment bool) bool {
+	return rtCfg().AnonFirst && !hasAttachment && !modelNeedsLogin(mc)
+}
+
 // availableModels 返回当前配置下值得暴露的模型。
 //
 // 没配 cookie 时排除 3.1 Pro：实测匿名请求它会被静默降级成 3.5 Flash-Lite，
@@ -304,9 +312,13 @@ func streamGenerateWithFiles(prompt, latest string, mc ModelConfig, pending []pe
 	//
 	// 挑号排在 acquireSlot 之前不违反「取 XSRF 必须走正式出口」：挑号只读库、
 	// 不发请求，真正发请求的是下面的 getXSRF，它在拿到 slot 之后。
+	// #20 匿名优先：不需要登录态能力时不占用 cookie 账号，走匿名省额度（见 anonFirstEligible）。
+	// 带附件（图/视频）时不能走匿名——下面 uploadBytes 那段会因 cookieStr=="" 直接报错。
 	var acct *CookieAccount
-	if a, ok := pickCookieAccount(); ok {
-		acct = a
+	if !anonFirstEligible(mc, len(pending) > 0) {
+		if a, ok := pickCookieAccount(); ok {
+			acct = a
+		}
 	}
 	preferProxy := int64(0)
 	if acct != nil {
