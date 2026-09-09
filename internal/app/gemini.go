@@ -101,6 +101,18 @@ func hasCookie() bool {
 	return enabled > 0
 }
 
+// modelNeedsLogin 判断一个模型是否必须登录态才真正生效。匿名请求这批会被服务端
+// 静默降级：3.1 Pro / 3.8 Flash → 3.5 Flash-Lite；思考链消失；媒体工具变成一句
+// "Are you signed in?" 文本。是「没 cookie 时排除哪些模型」和「#20 匿名优先要不要
+// 占一个 cookie 账号」共用的单一判据。
+//
+// 按 HexID + Thinking + Tool 判，跟旧的按模型名（3.1-pro/3.8-flash/3.7-flash）判
+// 逐模型核对等价：那三个正名的 HexID 就是 hexPro31 / hexFlash38，其余登录模型都被
+// Thinking 或 Tool 覆盖。
+func modelNeedsLogin(mc ModelConfig) bool {
+	return mc.HexID == hexPro31 || mc.HexID == hexFlash38 || mc.Thinking || mc.Tool > 0
+}
+
 // availableModels 返回当前配置下值得暴露的模型。
 //
 // 没配 cookie 时排除 3.1 Pro：实测匿名请求它会被静默降级成 3.5 Flash-Lite，
@@ -116,7 +128,7 @@ func availableModels() map[string]ModelConfig {
 	}
 	out := make(map[string]ModelConfig, len(Models))
 	for k, v := range Models {
-		if k == "gemini-3.1-pro" || k == "gemini-3.8-flash" || k == "gemini-3.7-flash" || v.Thinking || v.Tool > 0 {
+		if modelNeedsLogin(v) {
 			continue
 		}
 		out[k] = v

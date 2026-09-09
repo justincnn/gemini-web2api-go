@@ -293,6 +293,24 @@ func TestProHiddenWithoutCookie(t *testing.T) {
 	}
 }
 
+// modelNeedsLogin 是「没 cookie 时排除哪些模型」和「#20 匿名优先要不要占号」
+// 共用的单一判据，逐个模型钉死：纯文本非思考的 3.6/3.5-lite 匿名可用，其余全需登录。
+func TestModelNeedsLogin(t *testing.T) {
+	anon := map[string]bool{"gemini-3.6-flash": true, "gemini-3.5-flash-lite": true}
+	for name, mc := range Models {
+		want := !anon[name]
+		if got := modelNeedsLogin(mc); got != want {
+			t.Errorf("%s: modelNeedsLogin=%v want %v", name, got, want)
+		}
+	}
+	// 跟 availableModels 的排除口径必须一致：无 cookie 时暴露的正好是匿名可用那批
+	for name := range availableModels() {
+		if modelNeedsLogin(Models[name]) {
+			t.Errorf("%s 被 availableModels 暴露却判为需登录，两处判据不一致", name)
+		}
+	}
+}
+
 // 错误分类要按"看到之后该做什么"分，尤其得把"上游瞬时拒绝"和"出口被封"
 // 分开——前者重试即可，后者必须换 IP，混在一起排查时判断不了。
 func TestClassifyError(t *testing.T) {
