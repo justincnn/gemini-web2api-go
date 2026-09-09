@@ -225,7 +225,7 @@ a specific URL's content — is not implemented yet).
 - **Overview** — 24h KPIs, request volume / P50 latency dual-axis chart, per-model and per-proxy breakdowns, IP rate-limit usage, one-click connectivity check
 - **Requests** — request log (metadata only, no prompt/response content), status/model filters, pagination
 - **Proxy pool** — runtime CRUD, enable/disable, circuit breaker on repeated failures (each proxy is its own IP slot)
-- **Cookie pool** — import multiple signed-in Google accounts; requests rotate through them **least-recently-used first**. One-click "check" tells you whether an account is still signed in; `__Secure-1PSIDTS` is rotated automatically plus a 10-minute keepalive; each account is pinned to its own exit. The list shows redacted summaries only (cookie count / key entries / last 4 of SAPISID / failure count)
+- **Cookie pool** — import multiple signed-in Google accounts; requests rotate through them **least-recently-used first**. One-click "check" tells you whether an account is still signed in, and **dead accounts are flagged in red** so you know which to re-import; `__Secure-1PSIDTS` is rotated automatically plus a 10-minute keepalive; each account is pinned to its own exit. The list shows redacted summaries only (cookie count / key entries / last 4 of SAPISID / failure count)
 - **Settings** — runtime config form (saved settings take effect immediately), API key rotation, read-only view of deploy-time config
 
 The frontend is a single HTML file and Chart.js is embedded in the binary, **not loaded from a CDN**, so the panel also works on air-gapped or intranet deployments.

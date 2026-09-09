@@ -313,6 +313,27 @@ func TestModelNeedsLogin(t *testing.T) {
 	}
 }
 
+// cookieAcctView 的 health 派生（#18 面板标红）：fail_count>0 一律红（含被自动停用的死号），
+// 手动停用且无失败=灰，没成功过=待检测，其余=正常。
+func TestCookieHealthView(t *testing.T) {
+	cases := []struct {
+		a    CookieAccount
+		want string
+	}{
+		{CookieAccount{Status: "enabled", FailCount: 0, LastOkAt: 100}, "ok"},
+		{CookieAccount{Status: "enabled", FailCount: 3, LastOkAt: 100}, "dead"},
+		{CookieAccount{Status: "disabled", FailCount: 5, LastOkAt: 100}, "dead"},
+		{CookieAccount{Status: "disabled", FailCount: 0}, "disabled"},
+		{CookieAccount{Status: "enabled", FailCount: 0, LastOkAt: 0}, "unknown"},
+	}
+	for _, c := range cases {
+		if got := cookieAcctView(c.a)["health"]; got != c.want {
+			t.Errorf("status=%s fail=%d ok=%d: health=%v want %s",
+				c.a.Status, c.a.FailCount, c.a.LastOkAt, got, c.want)
+		}
+	}
+}
+
 // pickCookieAccount 的 SELECT+UPDATE 必须原子：N 个号被 N 个并发请求挑，
 // 每个都该拿到不同的号。没加锁时两个请求会 SELECT 到同一个"最久未用"的号、
 // 双双用它（跑 -race 更容易暴露）。
