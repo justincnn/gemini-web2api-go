@@ -13,6 +13,11 @@ import (
 // 也避免把凭证放进一个网页表单。这里只放调优参数——为了改个超时重启一次服务太蠢。
 //
 // 取值优先级：面板改过的（存 kv 表） > config.json / CLI flag > 内置默认。
+//
+// 加字段必读：面板保存走整体反序列化（admin.go 的 Decode(&RuntimeConfig)），而前端
+// saveRtCfg 只按 admin_ui 的 RT_GROUPS 拼 PUT body。新加的字段必须同步进 RT_GROUPS，
+// 否则它不在 body 里、每次点「保存并生效」都被解成零值冲掉（multi_turn 就这么被静默
+// 重置过，连 config.json 里设的都白设，见 #27）。
 type RuntimeConfig struct {
 	RetryAttempts   int    `json:"retry_attempts"`
 	RetryDelaySec   int    `json:"retry_delay_sec"`
