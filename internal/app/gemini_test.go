@@ -1,7 +1,9 @@
 package app
 
 import (
+	"fmt"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -307,6 +309,46 @@ func TestModelNeedsLogin(t *testing.T) {
 	for name := range availableModels() {
 		if modelNeedsLogin(Models[name]) {
 			t.Errorf("%s 被 availableModels 暴露却判为需登录，两处判据不一致", name)
+		}
+	}
+}
+
+// pickCookieAccount 的 SELECT+UPDATE 必须原子：N 个号被 N 个并发请求挑，
+// 每个都该拿到不同的号。没加锁时两个请求会 SELECT 到同一个"最久未用"的号、
+// 双双用它（跑 -race 更容易暴露）。
+func TestPickCookieConcurrentDistinct(t *testing.T) {
+	const n = 8
+	for i := 0; i < n; i++ {
+		id, err := accountAdd("conc", fmt.Sprintf("SAPISID=d%d; SID=x", i), "")
+		if err != nil {
+			t.Fatalf("插号失败: %v", err)
+		}
+		t.Cleanup(func() { _ = accountDelete(id) })
+	}
+
+	got := make([]int64, n)
+	var wg sync.WaitGroup
+	start := make(chan struct{})
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			<-start
+			if a, ok := pickCookieAccount(); ok {
+				got[idx] = a.ID
+			}
+		}(i)
+	}
+	close(start) // 让所有 goroutine 尽量同时冲挑号
+	wg.Wait()
+
+	seen := map[int64]int{}
+	for _, id := range got {
+		seen[id]++
+	}
+	for id, c := range seen {
+		if c > 1 {
+			t.Errorf("账号 #%d 被并发挑中 %d 次，挑号未串行化", id, c)
 		}
 	}
 }

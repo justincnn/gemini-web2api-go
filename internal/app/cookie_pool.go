@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -364,6 +365,14 @@ func poolHasCookie(cookie string) bool {
 	return false
 }
 
+// pickMu 把「SELECT 最久未用的号 + UPDATE 标记它刚用过」串成原子操作。
+// 不加锁时两个并发请求会 SELECT 到同一个"最久未用"的号、各自 UPDATE，于是同一瞬间
+// 双双用它，轮转形同虚设（CLAUDE.md 记的已知缺陷）。本进程内一把锁就够——限流器、
+// 轮转调度、代理池都是进程内状态，这个反代天生单实例，不存在跨进程并发挑号；也就
+// 不必为此上跨方言的事务/行锁（sqlite 无 FOR UPDATE、mysql 无 RETURNING，那条路
+// 全是方言分支）。挑号只是一次极快的 SELECT+UPDATE，串行化的争用可忽略。
+var pickMu sync.Mutex
+
 // pickCookieAccount 从池里挑一个 enabled 账号，按 last_used_at 最久优先，
 // 挑中后立刻把 last_used_at 记为现在（下次轮到别人）。池空返回 (nil,false)。
 func pickCookieAccount() (*CookieAccount, bool) {
@@ -376,6 +385,8 @@ func pickCookieAccount() (*CookieAccount, bool) {
 // 轮转会让大约一半请求撞上坏号 —— 表现就是"成功率莫名其妙很低"，而每次失败
 // 看起来都像是上游的问题。
 func pickCookieAccountExcept(skip map[int64]bool) (*CookieAccount, bool) {
+	pickMu.Lock()
+	defer pickMu.Unlock()
 	// 健康的排前面，同样健康的按最久未用轮转。
 	//
 	// 不这么排的话坏号会跟好号平起平坐地轮到，而挑到坏号时它没有绑定的出口，
